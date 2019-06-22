@@ -19,7 +19,7 @@ final class StreamRestClient[F[_]: ConcurrentEffect](C: HttpClient[F]) extends R
     HttpRequest.get[F](endpoint.httpx)
 
   def get[A: JsDecoder](endpoint: Endpoint): F[A] = {
-    implicit val dec: Decoder[A] = JsDecoder[A].decoder[Decoder]
+    implicit val dec: Decoder[A] = JsDecoder[A].decoder[Decoder[A]]
     C.request(createRequest(endpoint)).flatMap { resp =>
       resp.body.through(byteArrayParser).through(decoder)
     }.compile.lastOrError
