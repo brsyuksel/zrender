@@ -1,5 +1,8 @@
 package zrender.browser.devtools
 
+import io.circe.Encoder
+import io.circe.generic.semiauto._
+
 sealed trait Domain
 sealed abstract class Method(domain: Domain, name: String) {
   override def toString: String = s"$domain.$name"
@@ -39,8 +42,12 @@ case object DOM extends Domain {
   case object Enable extends Method(this, "enable")
 }
 
-case class Message[A](id: Int, method: Method, params: A)
+case class Message[A](id: Int, method: String, params: A)
 object Message {
+  implicit def enc[A: Encoder]: Encoder[Message[A]] = deriveEncoder
+
+  implicit def method2Str(m: Method): String = m.toString
+
   private type M[A] = Int => Message[A]
 
   def createCtx: M[Map[String, String]] =
