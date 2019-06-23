@@ -7,6 +7,10 @@ import scalaz.zio.interop.catz._
 import scalaz.zio.interop.catz.implicits._
 import fs2.{Pipe, Stream}
 import spinoco.fs2.http.websocket.Frame
+import io.circe._
+import io.circe.syntax._
+import io.circe.parser._
+import io.circe.optics.JsonPath
 
 import zrender.browser.Browser
 import zrender.client.{Endpoint, WebSocketClient}
@@ -19,20 +23,51 @@ final class ChromeBrowser(endpoint: Endpoint)(
   type P[F[_]] = Pipe[F, Frame[String], Frame[String]]
   type RP[F[_], A] = Ref[A] => P[F]
 
-  private def ctxPipe: RP[Task, String] = ref => in => {
-    val out = Stream(Message.createCtx)
-      .zipWithIndex
-      .map(t => t._1(t._2.toInt + 1))
-      .map(_.toString)
-      .map(Frame.Text(_))
+  private def ctxPipe: RP[Task, String] = ref => inbound => {
+    val out = Stream(Message.createCtx(1))
+      .map(m => Frame.Text(m.asJson.noSpaces))
       .covary[Task]
+
+    val in = inbound
+      .map(f => parse(f.a).getOrElse(Json.Null))
+      .map(j => JsonPath.root.result.browserContextId.string.getOption(j))
+      .filter(_.nonEmpty)
+      .take(1)
+      .evalMap(o => ref.set(o.get))
 
     out concurrently in
   }
 
-  private def ctxDisposePipe(ctxId: String): P[Task] = ???
-  private def targetCreate(ctxId: String): RP[Task, String] = ???
-  private def targetClose(tId: String): P[Task] = ???
+  private def ctxDisposePipe(ctxId: String): P[Task] = inbound => {
+    val out = Stream(Message.disposeCtx(ctxId)(1))
+      .map(m => Frame.Text(m.asJson.noSpaces))
+      .covary[Task]
+
+    out concurrently inbound
+  }
+
+  private def targetCreate(ctxId: String): RP[Task, String] = ref => inbound => {
+    val out = Stream(Message.createTarget(ctxId)(1))
+      .map(m => Frame.Text(m.asJson.noSpaces))
+      .covary[Task]
+
+    val in = inbound
+      .map(f => parse(f.a).getOrElse(Json.Null))
+      .map(j => JsonPath.root.result.targetId.string.getOption(j))
+      .filter(_.nonEmpty)
+      .take(1)
+      .evalMap(o => ref.set(o.get))
+
+    out concurrently in
+  }
+
+  private def targetClose(tId: String): P[Task] = inbound => {
+    val out = Stream(Message.closeTarget(tId)(1))
+      .map(m => Frame.Text(m.asJson.noSpaces))
+      .covary[Task]
+
+    out concurrently inbound
+  }
 
   def createCtx: Task[String] = for {
     ref <- Ref.make[String]("")

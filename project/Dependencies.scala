@@ -10,6 +10,7 @@ object Dependencies {
   lazy val circeCore = "io.circe" %% "circe-core" % "0.11.0"
   lazy val circeGeneric = "io.circe" %% "circe-generic" % "0.11.0"
   lazy val circeParser = "io.circe" %% "circe-parser" % "0.11.0"
+  lazy val circeOptics = "io.circe" %% "circe-optics" % "0.11.0"
   lazy val circeFs2 = "io.circe" %% "circe-fs2" % "0.11.0"
   lazy val pureconfig = "com.github.pureconfig" %% "pureconfig" % "0.11.0"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.0.8"

@@ -18,6 +18,7 @@ lazy val root = (project in file("."))
       circeCore,
       circeGeneric,
       circeParser,
+      circeOptics,
       circeFs2,
       pureconfig,
       scalaTest % Test
