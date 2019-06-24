@@ -21,7 +21,8 @@ lazy val root = (project in file("."))
       circeOptics,
       circeFs2,
       pureconfig,
-      scalaTest % Test
+      scalaTest % Test,
+      scalaCheck % Test
     ),
     scalacOptions ++= Seq(
       "-language:higherKinds"
