@@ -8,6 +8,6 @@ final class TabModule[F[_]: Monad](T: Tab[F]) {
 
   def getSource(url: String): F[String] = for {
     pageSource <- T.navigate(url)
-    clean <- scriptTagRgx.replaceAllIn(pageSource, "").pure[F]
+    clean = scriptTagRgx.replaceAllIn(pageSource, "")
   } yield clean
 }
