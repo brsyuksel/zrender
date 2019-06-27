@@ -5,20 +5,14 @@ import Scalaz._
 import scalaz.zio._
 import scalaz.zio.interop.catz._
 import scalaz.zio.interop.catz.implicits._
-import fs2.{Stream, Pipe}
+import fs2.Stream
 import spinoco.fs2.http.websocket.Frame
 
 import org.scalatest._
 
-import zrender.client.{WebSocketClient, Endpoint}
+import zrender.client.Endpoint
 
 class ChromeBrowserSpec extends FlatSpec with Matchers {
-  class MockClient(inbound: Stream[Task, Frame[String]])
-      extends WebSocketClient[Task, Pipe[Task, Frame[String], Frame[String]]] {
-    def pipe(endpoint: Endpoint, payload: Pipe[Task, Frame[String], Frame[String]]): Task[Unit] =
-      inbound.through(payload).compile.drain
-  }
-
   def stream(s: String): Stream[Task, Frame[String]] =
     Stream(s).map(Frame.Text(_)).repeat.covary[Task]
 

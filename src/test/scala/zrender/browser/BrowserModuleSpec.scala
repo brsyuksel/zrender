@@ -29,7 +29,7 @@ class BrowserModuleSpec extends FlatSpec with PropertyChecks {
       else F.raiseError("invalid tId")
   }
 
-  "BrowserModule.openTab" should "return TabInfo data provided by mockBrowser[Id]" in {
+  ".openTab" should "return TabInfo data provided by mockBrowser[Id]" in {
     forAll { ctxId: String =>
       val mock = mockBrowser[Id](ctxId)
       val module = new BrowserModule(mock)
@@ -40,7 +40,7 @@ class BrowserModuleSpec extends FlatSpec with PropertyChecks {
 
   type E[A] = String \/ A
 
-  "BrowserModule.closeTab" should "return ().right provided by mockBrowserError[Either]" in {
+  ".closeTab" should "return ().right provided by mockBrowserError[Either]" in {
     forAll { ctxId: String =>
       val mock = mockBrowserError[E](ctxId)
       val module = new BrowserModule(mock)
@@ -49,7 +49,7 @@ class BrowserModuleSpec extends FlatSpec with PropertyChecks {
     }
   }
 
-  "BrowserModule.closeTab" should "return left for invalid ctxId" in {
+  ".closeTab" should "return left for invalid ctxId" in {
     forAll { ctxId: String =>
       val mock = mockBrowserError[E](ctxId)
       val module = new BrowserModule(mock)
@@ -58,7 +58,7 @@ class BrowserModuleSpec extends FlatSpec with PropertyChecks {
     }
   }
 
-  "BrowserModule.closeTab" should "return left for invalid tId" in {
+  ".closeTab" should "return left for invalid tId" in {
     forAll { ctxId: String =>
       val mock = mockBrowserError[E](ctxId)
       val module = new BrowserModule(mock)

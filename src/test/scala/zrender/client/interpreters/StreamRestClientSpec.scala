@@ -59,7 +59,7 @@ class StreamRestClientSpec extends FlatSpec with PropertyChecks {
 
   implicit val rt = new DefaultRuntime {}
 
-  "StreamRestClient.get" should "return decoded case class" in {
+  ".get" should "return decoded case class" in {
     val exp = RespData(1, "test", List("abc", "def"))
     val response = resp("""{"a": 1, "b": "test", "c": ["abc", "def"]}""")
     val client = new MockHttpClient(response)
