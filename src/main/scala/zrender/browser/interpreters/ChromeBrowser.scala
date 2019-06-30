@@ -32,10 +32,10 @@ final class ChromeBrowser(endpoint: Endpoint)(
       .map(f => parse(f.a).getOrElse(Json.Null))
       .map(j => JsonPath.root.result.browserContextId.string.getOption(j))
       .filter(_.nonEmpty)
-      .take(1)
       .evalMap(o => ref.set(o.get))
+      .map(_ => Frame.Text(""))
 
-    out concurrently in
+    (out merge in).take(2)
   }
 
   private def ctxDisposePipe(ctxId: String): P[Task] = inbound => {
@@ -43,7 +43,7 @@ final class ChromeBrowser(endpoint: Endpoint)(
       .map(m => Frame.Text(m.asJson.noSpaces))
       .covary[Task]
 
-    out concurrently inbound
+    (out merge inbound).take(2)
   }
 
   private def targetCreate(ctxId: String): RP[Task, String] = ref => inbound => {
@@ -55,10 +55,10 @@ final class ChromeBrowser(endpoint: Endpoint)(
       .map(f => parse(f.a).getOrElse(Json.Null))
       .map(j => JsonPath.root.result.targetId.string.getOption(j))
       .filter(_.nonEmpty)
-      .take(1)
       .evalMap(o => ref.set(o.get))
+      .map(_ => Frame.Text(""))
 
-    out concurrently in
+    (out merge in).take(2)
   }
 
   private def targetClose(tId: String): P[Task] = inbound => {
@@ -66,7 +66,7 @@ final class ChromeBrowser(endpoint: Endpoint)(
       .map(m => Frame.Text(m.asJson.noSpaces))
       .covary[Task]
 
-    out concurrently inbound
+    (out merge inbound).take(2)
   }
 
   def createCtx: Task[String] = for {

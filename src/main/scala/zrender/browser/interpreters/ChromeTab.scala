@@ -48,15 +48,17 @@ final class ChromeTab(endpoint: Endpoint, userAgent: String, conf: ZRender)(
     val lastIndex = m.length
 
     inbound => {
-      val out = Stream.fromIterator[Task, String](m.toIterator).map(Frame.Text(_))
+      val out = Stream.fromIterator[Task, String](m.toIterator)
+        .map(Frame.Text(_))
+
       val in = inbound
         .map(f => parse(f.a).getOrElse(Json.Null))
         .map(j => JsonPath.root.id.int.getOption(j))
         .filter(_.nonEmpty)
         .filter(_ === lastIndex.some)
-        .take(1)
+        .map(_ => Frame.Text(""))
 
-      out concurrently in
+      (out merge in).take(lastIndex + 1)
     }
   }
 
@@ -69,10 +71,10 @@ final class ChromeTab(endpoint: Endpoint, userAgent: String, conf: ZRender)(
       .map(f => parse(f.a).getOrElse(Json.Null))
       .map(j => JsonPath.root.result.result.value.string.getOption(j))
       .filter(_.nonEmpty)
-      .take(1)
       .evalMap(o => ref.set(o.get))
+      .map(_ => Frame.Text(""))
 
-    out concurrently in
+    (out merge in).take(2)
   }
 
   def navigate(url: String): Task[String] = for {

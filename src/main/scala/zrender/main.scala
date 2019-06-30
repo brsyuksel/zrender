@@ -17,6 +17,7 @@ import spinoco.fs2.http.HttpResponse
 import spinoco.protocol.http.{HttpRequestHeader, HttpStatusCode, Uri, Scheme, HostPort}
 import spinoco.protocol.http.header._
 import spinoco.protocol.http.header.value.AgentVersion
+import spinoco.protocol.mime.{ContentType, MediaType, MIMECharset}
 import spinoco.fs2.http.routing._
 import pureconfig._
 
@@ -61,8 +62,13 @@ object main extends App {
 
   def handler(c: Config, r: ChromeResponse)(fn: (String, String) => Task[String]): Handler =
     (req, body) => getUri(req) match {
-      case -\/(err) => Stream.emit(HttpResponse(HttpStatusCode.ServiceUnavailable))
-      case \/-(uri) => Stream.eval(fn(uri, getUserAgent(req))).map(r => HttpResponse(HttpStatusCode.Ok).withUtf8Body(r))
+      case -\/(err) =>
+        Stream.emit(HttpResponse(HttpStatusCode.ServiceUnavailable))
+      case \/-(uri) =>
+        val header = `Content-Type`(ContentType.TextContent(MediaType.`text/html`, Some(MIMECharset.`UTF-8`)))
+        Stream
+          .eval(fn(uri, getUserAgent(req)))
+          .map(r => HttpResponse(HttpStatusCode.Ok).appendHeader(header).withUtf8Body(r))
     }
 
   def server(c: Config, r: ChromeResponse)(fn: Handler): Task[Unit] =
