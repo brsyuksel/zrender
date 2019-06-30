@@ -30,3 +30,6 @@ lazy val root = (project in file("."))
   )
 
 javaOptions in reStart += "-Xmx2g"
+
+enablePlugins(PackPlugin)
+packMain := Map("zrender" -> "zrender.main")
