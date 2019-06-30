@@ -12,7 +12,7 @@ import io.circe.syntax._
 import io.circe.parser._
 import io.circe.optics.JsonPath
 
-import zrender.conf.ZRender
+import zrender.conf.{Chrome, ZRender}
 import zrender.browser.Tab
 import zrender.client.{Endpoint, WebSocketClient}
 import zrender.browser.devtools.Message
