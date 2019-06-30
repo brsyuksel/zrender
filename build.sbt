@@ -32,4 +32,5 @@ lazy val root = (project in file("."))
 javaOptions in reStart += "-Xmx2g"
 
 enablePlugins(PackPlugin)
+packGenerateWindowsBatFile := false
 packMain := Map("zrender" -> "zrender.main")
