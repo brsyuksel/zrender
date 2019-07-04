@@ -74,7 +74,7 @@ object main extends App {
   def server(c: Config, r: ChromeResponse)(fn: Handler): Task[Unit] =
     http.server(new InetSocketAddress(c.server.ip, c.server.port))(fn).compile.drain
 
-  def r[A](fn: (Config, ChromeResponse) => A)= Reader[(Config, ChromeResponse), A]{
+  def r[A](fn: (Config, ChromeResponse) => A) = Reader[(Config, ChromeResponse), A]{
     case (c: Config, res: ChromeResponse) => fn(c, res)
   }
 
@@ -90,7 +90,7 @@ object main extends App {
 
   def prog = for {
     conf <- readConf
-    cmd = conf.chrome.bin |+| " --headless --disable-gpu --remote-debugging-port=" |+| conf.chrome.port.toString
+    cmd = conf.chrome.bin |+| " --no-sandbox --headless --disable-gpu --remote-debugging-port=" |+| conf.chrome.port.toString
     proc = new SysProcess[Task]
     chrome <- proc.run(cmd)
     httpClient <- http.client[Task]()
