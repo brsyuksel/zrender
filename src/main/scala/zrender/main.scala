@@ -14,7 +14,7 @@ import scalaz.zio.interop.scalaz72._
 import fs2.Stream
 import spinoco.fs2.http
 import spinoco.fs2.http.HttpResponse
-import spinoco.protocol.http.{HttpRequestHeader, HttpStatusCode, Uri, Scheme, HostPort}
+import spinoco.protocol.http.{HttpRequestHeader, HttpResponseHeader, HttpStatusCode, Uri, Scheme, HostPort}
 import spinoco.protocol.http.header._
 import spinoco.protocol.http.header.value.AgentVersion
 import spinoco.protocol.mime.{ContentType, MediaType, MIMECharset}
@@ -68,7 +68,7 @@ object main extends App {
         val header = `Content-Type`(ContentType.TextContent(MediaType.`text/html`, Some(MIMECharset.`UTF-8`)))
         Stream
           .eval(fn(uri, getUserAgent(req)))
-          .map(r => HttpResponse(HttpStatusCode.Ok).appendHeader(header).withUtf8Body(r))
+          .map(res => HttpResponse(HttpResponseHeader(HttpStatusCode.Ok, "OK", List(header)), Stream.fromIterator[Task, Byte](res.getBytes.toIterator)))
     }
 
   def server(c: Config, r: ChromeResponse)(fn: Handler): Task[Unit] =
