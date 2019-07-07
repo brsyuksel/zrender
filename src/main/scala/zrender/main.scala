@@ -42,7 +42,7 @@ object main extends App {
     }
 
   def getUserAgent(r: HttpRequestHeader): String =
-    r.headers.collectFirst { case `User-Agent`(AgentVersion(a)) => a }.getOrElse("zrender/1.0.0")
+    r.headers.collectFirst { case `User-Agent`(AgentVersion(a)) => a }.getOrElse("zrender/0.1.0")
 
   def getSource(c: Config, r: ChromeResponse)(uri: String, userAgent: String): Task[String] =
     for {
