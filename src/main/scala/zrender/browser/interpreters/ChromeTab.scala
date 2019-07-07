@@ -1,5 +1,7 @@
 package zrender.browser.interpreters
 
+import scala.concurrent.duration._
+
 import scalaz._
 import Scalaz._
 import scalaz.zio._
@@ -17,7 +19,6 @@ import zrender.browser.Tab
 import zrender.client.{Endpoint, WebSocketClient}
 import zrender.browser.devtools.Message
 
-
 final class ChromeTab(endpoint: Endpoint, userAgent: String, conf: ZRender)(
   C: WebSocketClient[Task, Pipe[Task, Frame[String], Frame[String]]]
 ) extends Tab[Task] {
@@ -27,29 +28,28 @@ final class ChromeTab(endpoint: Endpoint, userAgent: String, conf: ZRender)(
 
   private def m2Str[A: Encoder](fn: Int => Message[A]): Int => String = fn map { _.asJson.noSpaces }
 
-  private def messages(url: String): List[String] = List(
+  lazy val initMessages: List[String] = List(
     Message.enableDOM.some.map(m2Str(_)),
     Message.enablePage.some.map(m2Str(_)),
     Message.enableSecurity.some.map(m2Str(_)),
-    Message.enableNetwork.some.map(m2Str(_)),
     Message.enableRuntime.some.map(m2Str(_)),
     Message.ignoreCertErrs.some.map(m2Str(_)),
     Message.userAgent(userAgent).some.map(m2Str(_)),
     Message.bypassWorkers.some.map(m2Str(_)),
     conf.reqHeader.some.filter(_ === true).map(_ => Message.extraHeaders(Map("X-ZRender" -> "1.0.0"))).map(m2Str(_)),
-    conf.blockedUrls.map(Message.blockUrls).map(m2Str(_)),
-    Message.navigate(url).some.map(m2Str(_)))
+    conf.blockedUrls.map(Message.blockUrls).map(m2Str(_)))
     .flatten
     .zipWithIndex
     .map {case (fn, l) => fn(l.toInt + 1)}
 
-  private def navigatePipe(url: String): P[Task] = {
-    val m = messages(url)
-    val lastIndex = m.length
+  private def initPipe: P[Task] = {
+    val lastIndex = initMessages.length
 
     inbound => {
-      val out = Stream.fromIterator[Task, String](m.toIterator)
+      val out = Stream
+        .fromIterator[Task, String](initMessages.toIterator)
         .map(Frame.Text(_))
+        .covary[Task]
 
       val in = inbound
         .map(f => parse(f.a).getOrElse(Json.Null))
@@ -60,6 +60,32 @@ final class ChromeTab(endpoint: Endpoint, userAgent: String, conf: ZRender)(
 
       (out merge in).take(lastIndex + 1)
     }
+  }
+
+  private def navigatePipe(url: String): P[Task] = inbound => {
+    val out = Stream(Message.enableNetwork(1), Message.navigate(url)(2))
+      .map(m => m.asJson.noSpaces)
+      .map(Frame.Text(_))
+      .covary[Task]
+
+    val in = inbound
+      .map(f => parse(f.a).getOrElse(Json.Null))
+      .map(j =>
+        JsonPath.root.method.string.getOption(j)
+          .filter(_ === "Network.loadingFinished")
+          .flatMap(_ => JsonPath.root.params.timestamp.double.getOption(j))
+      )
+      .filter(_.nonEmpty)
+      .sliding(2)
+      .map(q => {
+        val (o1, q2) = q.dequeue
+        val (o2, _) = q2.dequeue
+        (o1 |@| o2)((d1, d2) => (d2 - d1) gte 0.5)
+      })
+      .filter(_ === true.some)
+      .map(_ => Frame.Text(""))
+
+    (out merge in).take(3)
   }
 
   private def sourcePipe: RP[Task, String] = ref => inbound => {
@@ -77,8 +103,13 @@ final class ChromeTab(endpoint: Endpoint, userAgent: String, conf: ZRender)(
     (out merge in).take(2)
   }
 
-  def navigate(url: String): Task[String] = for {
-    _ <- C.pipe(endpoint, navigatePipe(url))
+  def init: Task[Unit] =
+    C.pipe(endpoint, initPipe)
+
+  def navigate(url: String): Task[Unit] =
+    C.pipe(endpoint, navigatePipe(url))
+
+  def source: Task[String] = for {
     ref <- Ref.make[String]("")
     _ <- C.pipe(endpoint, sourcePipe(ref))
     v <- ref.get
