@@ -9,5 +9,7 @@ trait Browser[F[_]] {
 }
 
 trait Tab[F[_]] {
-  def navigate(url: String): F[String]
+  def init: F[Unit]
+  def navigate(url: String): F[Unit]
+  def source: F[String]
 }
