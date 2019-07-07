@@ -80,7 +80,7 @@ final class ChromeTab(endpoint: Endpoint, userAgent: String, conf: ZRender)(
       .map(q => {
         val (o1, q2) = q.dequeue
         val (o2, _) = q2.dequeue
-        (o1 |@| o2)((d1, d2) => (d2 - d1) gte 0.5)
+        (o1 |@| o2)((d1, d2) => (d2 - d1) gte conf.reqInterval)
       })
       .filter(_ === true.some)
       .map(_ => Frame.Text(""))

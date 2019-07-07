@@ -7,9 +7,9 @@ object Chrome {
   implicit val chrome = ConfigReader.forProduct2("bin", "port")(Chrome.apply)
 }
 
-case class ZRender(blockedUrls: Option[List[String]], reqHeader: Boolean, resHeader: Boolean)
+case class ZRender(blockedUrls: Option[List[String]], reqHeader: Boolean, resHeader: Boolean, reqInterval: Double)
 object ZRender {
-  implicit val zrender = ConfigReader.forProduct3("blocked-urls", "req-header", "res-header")(ZRender.apply)
+  implicit val zrender = ConfigReader.forProduct4("blocked-urls", "req-header", "res-header", "req-interval")(ZRender.apply)
 }
 
 case class Server(ip: String, port: Int)
