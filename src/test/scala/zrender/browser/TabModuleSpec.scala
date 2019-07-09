@@ -9,7 +9,11 @@ import org.scalacheck._
 import org.scalacheck.Prop.forAll
 
 class TabModuleSpec extends FlatSpec with PropertyChecks {
-  def mockTab[F[_]: Applicative](body: String): Tab[F] = (url: String) => body.pure[F]
+  def mockTab[F[_]: Applicative](body: String): Tab[F] = new Tab[F] {
+    def init: F[Unit] = ().pure[F]
+    def navigate(url: String): F[Unit] = ().pure[F]
+    def source: F[String] = body.pure[F]
+  }
 
   ".getSource" should "return plain text" in {
     forAll { s: String =>
